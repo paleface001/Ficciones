@@ -70,96 +70,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var Collection = __webpack_require__(1);
-module.exports = Collection;
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var THREE = __webpack_require__(2);
-var RenderPass = __webpack_require__(3);
-
-var _require = __webpack_require__(4),
-    basicVertex = _require.basicVertex,
-    basicFragment = _require.basicFragment;
-
-var Collection = function () {
-						function Collection(cfg) {
-												_classCallCheck(this, Collection);
-
-												this.container = cfg.container;
-						}
-
-						Collection.prototype.renderPassTest = function renderPassTest() {
-												var self = this;
-												var container = document.getElementById(self.container);
-												var width = container.offsetWidth;
-												var height = container.offsetHeight;
-												var scene = new THREE.Scene();
-												var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-												renderer.setSize(width, height);
-												renderer.setClearColor(0x000000, 0.0);
-												container.appendChild(renderer.domElement);
-												var camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-												camera.position.z = 5;
-
-												var geometry = new THREE.BoxGeometry(1, 1, 1);
-												var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-												var cube = new THREE.Mesh(geometry, material);
-												//scene.add( cube );
-
-												//test renderPass
-												var passSize = { width: width, height: height };
-												var passClear = { color: 0xffffff, alpha: 0 };
-												var pass = new RenderPass({ camera: camera,
-																		size: passSize,
-																		clear: passClear,
-																		renderer: renderer
-												});
-												pass.pass.depthBuffer = true;
-												pass.add(cube);
-
-												//pass output
-												//output
-												var out_mat = new THREE.RawShaderMaterial({ vertexShader: basicVertex,
-																		fragmentShader: basicFragment,
-																		side: THREE.DoubleSide,
-																		transparent: true
-												});
-												out_mat.uniforms = { texture: { type: "t", value: pass.texture } };
-												var out_plane = new THREE.PlaneBufferGeometry(width, height, 1, 1);
-												var outOrthCam = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-												outOrthCam.position.set(0, 0, 100);
-												var out = new THREE.Mesh(out_plane, out_mat);
-												scene.add(out);
-
-												var animate = function animate() {
-																		requestAnimationFrame(animate);
-																		cube.rotation.x += 0.01;
-																		cube.rotation.y += 0.01;
-																		pass.render();
-																		renderer.render(scene, outOrthCam);
-												};
-												animate();
-						};
-
-						return Collection;
-}();
-
-module.exports = Collection;
-
-/***/ }),
-/* 2 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3636,12 +3551,203 @@ var SceneUtils={createMultiMaterialObject:function createMultiMaterialObject()/*
 function LensFlare(){console.error('THREE.LensFlare has been moved to /examples/js/objects/Lensflare.js');}
 
 /***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var Collection = __webpack_require__(2);
+module.exports = Collection;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var THREE = __webpack_require__(0);
+var Water = __webpack_require__(3);
+
+var Collection = function () {
+  function Collection(cfg) {
+    _classCallCheck(this, Collection);
+
+    this.container = cfg.container;
+  }
+
+  Collection.prototype.waterTest = function waterTest() {
+    var water = new Water({ container: this.container });
+    water.render();
+  };
+
+  return Collection;
+}();
+
+module.exports = Collection;
+
+/***/ }),
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var THREE = __webpack_require__(2);
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var THREE = __webpack_require__(0);
+var Sketch3D = __webpack_require__(4);
+var RenderPass = __webpack_require__(5);
+var vertexShader = __webpack_require__(6);
+var fragmentShader = __webpack_require__(7);
+var Moon = __webpack_require__(8);
+
+var Water = function (_Sketch3D) {
+  _inherits(Water, _Sketch3D);
+
+  function Water() {
+    _classCallCheck(this, Water);
+
+    return _possibleConstructorReturn(this, _Sketch3D.apply(this, arguments));
+  }
+
+  Water.prototype._init_ = function _init_() {
+    var self = this;
+    _Sketch3D.prototype._init_.call(this);
+    //set default camera
+    self.defaultCamera.position.set(0, 100, 200);
+    self.defaultCamera.lookAt(0, 0, 0);
+    self.defaultCamera.updateProjectionMatrix();
+    //set reflection camera
+    var mirrorCamera = self.defaultCamera.clone();
+    mirrorCamera.position.set(0, -100, 200);
+    mirrorCamera.lookAt(0, 0, 0);
+    mirrorCamera.up.set(0, -1, 0);
+    mirrorCamera.updateProjectionMatrix();
+    mirrorCamera.updateMatrixWorld();
+    this.mirrorCamera = mirrorCamera;
+  };
+
+  Water.prototype.render = function render() {
+    var self = this;
+    //add moon
+    var moon = new Moon({
+      color: new THREE.Vector3(224 / 255, 170 / 225, 82 / 255),
+      clipped: false
+    });
+    moon.setPosition(0, 0, -300);
+    self.scene.add(moon.mesh);
+    //water passes
+    //reflection pass
+    var passSize = { width: self.sketchWidth, height: self.sketchHeight };
+    var passClear = { color: 0xffffff, alpha: 0 };
+    var pass1 = new RenderPass({ camera: self.mirrorCamera,
+      size: passSize,
+      clear: passClear,
+      renderer: self.renderer
+    });
+    var clippingPlane1 = new THREE.Vector4(0, 1, 0, -0);
+    var moon2 = new Moon({
+      color: new THREE.Vector3(224 / 255, 170 / 225, 82 / 255),
+      clipped: true,
+      clippingPlane: clippingPlane1
+    });
+    moon2.setPosition(0, 0, -300);
+    pass1.add(moon2.mesh);
+    pass1.render();
+    //refraction pass
+    var pass2 = new RenderPass({ camera: self.defaultCamera,
+      size: passSize,
+      clear: passClear,
+      renderer: self.renderer
+    });
+    var clippingPlane2 = new THREE.Vector4(0, -1, 0, 0);
+    var moon3 = new Moon({
+      color: new THREE.Vector3(224 / 255, 170 / 225, 82 / 255),
+      clipped: true,
+      clippingPlane: clippingPlane2
+    });
+    moon3.setPosition(0, 0, -300);
+    pass2.add(moon3.mesh);
+    pass2.render();
+    //add sea
+    var sea_geo = new THREE.PlaneBufferGeometry(1000, 1000, 50);
+    var sea_mat = new THREE.RawShaderMaterial({
+      vertexShader: vertexShader.default,
+      fragmentShader: fragmentShader.default,
+      side: THREE.DoubleSide,
+      transparent: true
+    });
+    sea_mat.uniforms = { reflectionTexture: { type: "t", value: pass1.texture },
+      refractionTexture: { type: "t", value: pass2.texture },
+      cameraPos: { type: 'v3', value: self.defaultCamera.position },
+      near: { type: 'f', value: self.defaultCamera.near },
+      far: { type: 'f', value: self.defaultCamera.far }
+    };
+    var sea = new THREE.Mesh(sea_geo, sea_mat);
+    sea.rotation.x = -Math.PI * 0.5;
+    self.scene.add(sea);
+    //render
+    _Sketch3D.prototype.render.call(this);
+  };
+
+  return Water;
+}(Sketch3D);
+
+module.exports = Water;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var THREE = __webpack_require__(0);
+
+var Sketch3D = function () {
+  function Sketch3D(cfg) {
+    _classCallCheck(this, Sketch3D);
+
+    this.container = cfg.container;
+    this._init_();
+  }
+
+  Sketch3D.prototype._init_ = function _init_() {
+    var self = this;
+    var container = document.getElementById(self.container);
+    var width = container.offsetWidth;
+    var height = container.offsetHeight;
+    var scene = new THREE.Scene();
+    var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setClearColor(0x000000, 0.0);
+    container.appendChild(renderer.domElement);
+    var camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
+    camera.position.z = 500;
+    //regist property
+    self.sketchWidth = width;
+    self.sketchHeight = height;
+    self.scene = scene;
+    self.renderer = renderer;
+    self.defaultCamera = camera;
+  };
+
+  Sketch3D.prototype.render = function render() {
+    this.renderer.render(this.scene, this.defaultCamera);
+  };
+
+  return Sketch3D;
+}();
+
+;
+
+module.exports = Sketch3D;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var THREE = __webpack_require__(0);
 
 var RenderPass = function () {
     function RenderPass(cfg) {
@@ -3689,31 +3795,82 @@ var RenderPass = function () {
 module.exports = RenderPass;
 
 /***/ }),
-/* 4 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__basic_vertex_glsl__ = __webpack_require__(5);
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "basicVertex", function() { return __WEBPACK_IMPORTED_MODULE_0__basic_vertex_glsl__["a"]; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__basic_fragment_glsl__ = __webpack_require__(6);
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "basicFragment", function() { return __WEBPACK_IMPORTED_MODULE_1__basic_fragment_glsl__["a"]; });
-
-
-
-/***/ }),
-/* 5 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony default export */ __webpack_exports__["a"] = ("precision mediump float;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform mat4 modelMatrix;\nattribute vec3 position;\nattribute vec2 uv;\nvarying vec2 vUv;\nvoid main(){\n  vUv=uv;\n  gl_Position=projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}\n");
-
-/***/ }),
 /* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony default export */ __webpack_exports__["a"] = ("precision mediump float;\nuniform sampler2D texture;\nvarying vec2 vUv;\nvoid main(){\n    vec4 color = texture2D(texture,vUv).rgba;\n    gl_FragColor = color;\n}\n");
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform mat4 modelMatrix;\nuniform vec3 cameraPos;\nattribute vec3 position;\nattribute vec2 uv;\nvarying vec4 clippingSpace;\nvarying vec3 viewDir;\nvarying vec2 vUv;\nvoid main(){\n  vUv = uv;\n  vec3 worldPosition=vec3(modelMatrix*vec4(position,1.0));\n  viewDir = normalize(cameraPos - worldPosition);\n  clippingSpace = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n  gl_Position = clippingSpace;\n}\n");
+
+/***/ }),
+/* 7 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\nuniform sampler2D reflectionTexture;\nuniform sampler2D refractionTexture;\nuniform float near;\nuniform float far;\nvarying vec4 clippingSpace;\nvarying vec3 viewDir;\nvarying vec2 vUv;\n\nconst vec4 waterColor = vec4(0.604, 0.867, 0.851,1.0);\nconst float fresnelReflective = 0.5;\nconst float minBlueness = 0.4;\nconst float maxBlueness = 0.8;\nconst float murkyDepth = 14.0;\n\nvec2 clipSpaceToTexCoords(vec4 clipSpace){\n\tvec2 ndc = (clipSpace.xy / clipSpace.w);\n    vec2 texCoords = ndc / 2.0 + 0.5;\n    return clamp(texCoords, 0.002, 0.998);\n}\n\nfloat calculateFresnel(){\n\tvec3 normal = normalize(vec3(0,1,0));\n\tfloat refractiveFactor = dot(viewDir, normal);\n\trefractiveFactor = pow(refractiveFactor, fresnelReflective);\n\treturn clamp(refractiveFactor, 0.0, 1.0);\n}\n\nfloat LinearizeDepth(float depth) {\n    float z = depth * 2.0 - 1.0;  \n    return (2.0 * near * far) / (far + near - z * (far - near));  \n}\n\nvec4 applyMurkiness(vec4 refractColour, float waterDepth){\n\tfloat murkyFactor = clamp(waterDepth / murkyDepth, 0.0, 1.0);\n\tfloat murkiness = minBlueness + murkyFactor * (maxBlueness - minBlueness);\n\treturn mix(refractColour, waterColor, murkiness);\n}\n\n\nvoid main(){\n    vec2 globalUV = clipSpaceToTexCoords(clippingSpace);\n    vec4 reflectionColor = texture2D(reflectionTexture,vec2(globalUV.x,1.0-globalUV.y)).rgba;\n    vec4 refractionColor = texture2D(refractionTexture,vec2(globalUV.x,globalUV.y)).rgba;\n    //blueness\n    reflectionColor = mix(reflectionColor, waterColor, minBlueness);\n    float waterDepth= 1.0-LinearizeDepth(gl_FragCoord.z) / far;\n    refractionColor = applyMurkiness(refractionColor, waterDepth);\n\n    gl_FragColor = mix(reflectionColor,refractionColor,calculateFresnel());\n}\n");
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var THREE = __webpack_require__(0);
+var vertexShader = __webpack_require__(9);
+var fragmentShader = __webpack_require__(10);
+
+var Moon = function () {
+    function Moon(cfg) {
+        _classCallCheck(this, Moon);
+
+        this.color = cfg.color;
+        this.clipped = cfg.clipped;
+        this.clippingPlane = cfg.clippingPlane ? cfg.clippingPlane : new THREE.Vector4(0, 1, 0, 0);
+        this._init_();
+    }
+
+    Moon.prototype._init_ = function _init_() {
+        var self = this;
+        self.geometry = new THREE.SphereBufferGeometry(100, 50, 50);
+        self.material = new THREE.RawShaderMaterial({
+            vertexShader: vertexShader.default,
+            fragmentShader: fragmentShader.default,
+            side: THREE.DoubleSide,
+            transparent: true
+        });
+        self.material.uniforms = {
+            clippingPlane: { type: 'v4', value: self.clippingPlane },
+            clipped: { type: 'bool', value: self.clipped },
+            color: { type: 'v3', value: this.color }
+        };
+        self.mesh = new THREE.Mesh(self.geometry, self.material);
+    };
+
+    Moon.prototype.setPosition = function setPosition(x, y, z) {
+        this.mesh.position.set(x, y, z);
+    };
+
+    return Moon;
+}();
+
+module.exports = Moon;
+
+/***/ }),
+/* 9 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform mat4 modelMatrix;\nuniform vec4 clippingPlane;\nuniform vec3 color;\nattribute vec3 position;\nvarying vec3 vColor;\nvarying float clipDistance;\nvoid main(){\n  vColor = color;\n  vec4 worldPosition = modelMatrix*vec4(position,1.0);\n  clipDistance = dot(worldPosition,clippingPlane);\n  gl_Position=projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}\n");
+
+/***/ }),
+/* 10 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\nuniform bool clipped;\nvarying float clipDistance;\nvarying vec3 vColor;\nvoid main(){\n    if(clipped == false || clipDistance >= 0.0){\n      gl_FragColor = vec4(vColor,1.0);\n    }else{\n        discard;\n    }\n}\n");
 
 /***/ })
 /******/ ]);
