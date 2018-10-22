@@ -1,5 +1,5 @@
 const THREE = require('three');
-const vertexShader = require('../../shader/water/sine-wave-vertex-realistic.glsl');
+const vertexShader = require('../../shader/moon/basic-vertex.glsl');
 const fragmentShader = require('../../shader/moon/basic-fragment.glsl');
 
 class Moon {
@@ -20,11 +20,6 @@ class Moon {
             transparent: true
         });
         self.material.uniforms = {
-            _WaveLength:{type:'f',value:0.5},
-            _Amp:{type:'f',value:0.5},
-            _Speed:{type:'f',value:0.2},
-            _Dir:{type:'v4',value:[1.0,0.0,0.0,0.0]},
-            _Sharpness:{type:'f',value:1.0},
             clippingPlane:{type:'v4',value:self.clippingPlane},
             clipped:{type:'bool',value:self.clipped},
             color:{type:'v3',value:this.color}

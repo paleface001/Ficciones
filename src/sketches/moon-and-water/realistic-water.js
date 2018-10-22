@@ -1,7 +1,7 @@
 const THREE = require('three');
 const Sketch3D = require('../../core/skech3d');
 const RenderPass = require('../../core/pass/renderpass');
-const vertexShader = require('../../shader/water/basic-vertex.glsl');
+const vertexShader = require('../../shader/water/sine-wave-vertex-realistic.glsl');
 const fragmentShader = require('../../shader/water/basic-fragment.glsl');
 const Moon = require('../../sketches/moon-and-water/moon');
 
@@ -22,6 +22,8 @@ class Water extends Sketch3D {
         mirrorCamera.updateProjectionMatrix();
         mirrorCamera.updateMatrixWorld();
         this.mirrorCamera = mirrorCamera;
+        //initialize time
+        this.startTime = Date.now();
     }
 
     render(){
@@ -67,7 +69,7 @@ class Water extends Sketch3D {
         pass2.add(moon3.mesh);
         pass2.render();
         //add sea
-        const sea_geo = new THREE.PlaneBufferGeometry( 1000, 1000, 50 );
+        const sea_geo = new THREE.PlaneBufferGeometry( 1000, 1000, 500 );
         const sea_mat = new THREE.RawShaderMaterial({ 
             vertexShader: vertexShader.default,
             fragmentShader: fragmentShader.default,
@@ -78,13 +80,27 @@ class Water extends Sketch3D {
                            refractionTexture:{type:"t",value:pass2.texture},
                            cameraPos:{type:'v3',value:self.defaultCamera.position},
                            near:{type:'f',value:self.defaultCamera.near},
-                           far:{type:'f',value:self.defaultCamera.far}
+                           far:{type:'f',value:self.defaultCamera.far},
+                           _WaveLength:{type:'f',value:0.5},
+                           _Amp:{type:'f',value:0.5},
+                           _Speed:{type:'f',value:0.2},
+                           _Dir:{type:'v4',value:[1.0,0.0,0.0,0.0]},
+                           _Sharpness:{type:'f',value:1.0},
+                           time:{type:'f',value:0.0}
                          };
         const sea = new THREE.Mesh( sea_geo, sea_mat );
         sea.rotation.x = -Math.PI * 0.5;
         self.scene.add( sea );
+        self.seaPlane = sea;
         //render
-        super.render();
+        function rendering(){
+          requestAnimationFrame( rendering );
+          //self.seaPlane.material.uniforms.time.value = .005 * ( Date.now() - self.startTime );
+          self.seaPlane.material.uniforms.time.value += 1.0 / 60.0;
+          self.renderer.render( self.scene, self.defaultCamera);
+        }
+
+        rendering();
     }
 }
 

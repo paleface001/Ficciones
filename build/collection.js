@@ -3624,6 +3624,8 @@ var Water = function (_Sketch3D) {
     mirrorCamera.updateProjectionMatrix();
     mirrorCamera.updateMatrixWorld();
     this.mirrorCamera = mirrorCamera;
+    //initialize time
+    this.startTime = Date.now();
   };
 
   Water.prototype.render = function render() {
@@ -3669,7 +3671,7 @@ var Water = function (_Sketch3D) {
     pass2.add(moon3.mesh);
     pass2.render();
     //add sea
-    var sea_geo = new THREE.PlaneBufferGeometry(1000, 1000, 50);
+    var sea_geo = new THREE.PlaneBufferGeometry(1000, 1000, 500);
     var sea_mat = new THREE.RawShaderMaterial({
       vertexShader: vertexShader.default,
       fragmentShader: fragmentShader.default,
@@ -3680,13 +3682,27 @@ var Water = function (_Sketch3D) {
       refractionTexture: { type: "t", value: pass2.texture },
       cameraPos: { type: 'v3', value: self.defaultCamera.position },
       near: { type: 'f', value: self.defaultCamera.near },
-      far: { type: 'f', value: self.defaultCamera.far }
+      far: { type: 'f', value: self.defaultCamera.far },
+      _WaveLength: { type: 'f', value: 0.5 },
+      _Amp: { type: 'f', value: 0.5 },
+      _Speed: { type: 'f', value: 0.2 },
+      _Dir: { type: 'v4', value: [1.0, 0.0, 0.0, 0.0] },
+      _Sharpness: { type: 'f', value: 1.0 },
+      time: { type: 'f', value: 0.0 }
     };
     var sea = new THREE.Mesh(sea_geo, sea_mat);
     sea.rotation.x = -Math.PI * 0.5;
     self.scene.add(sea);
+    self.seaPlane = sea;
     //render
-    _Sketch3D.prototype.render.call(this);
+    function rendering() {
+      requestAnimationFrame(rendering);
+      //self.seaPlane.material.uniforms.time.value = .005 * ( Date.now() - self.startTime );
+      self.seaPlane.material.uniforms.time.value += 1.0 / 60.0;
+      self.renderer.render(self.scene, self.defaultCamera);
+    }
+
+    rendering();
   };
 
   return Water;
@@ -3800,7 +3816,7 @@ module.exports = RenderPass;
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform mat4 modelMatrix;\nuniform vec3 cameraPos;\nattribute vec3 position;\nattribute vec2 uv;\nvarying vec4 clippingSpace;\nvarying vec3 viewDir;\nvarying vec2 vUv;\nvoid main(){\n  vUv = uv;\n  vec3 worldPosition=vec3(modelMatrix*vec4(position,1.0));\n  viewDir = normalize(cameraPos - worldPosition);\n  clippingSpace = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n  gl_Position = clippingSpace;\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\nstruct Wave {\n    float freq;  \n    float amp; \n    float phase; \n    vec2 dir;\n};\n\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform mat4 modelMatrix;\nuniform vec3 cameraPos;\n\nuniform float _WaveLength;\nuniform float _Amp;\nuniform float _Speed;\nuniform vec4 _Dir;\nuniform float _Sharpness;\nuniform float time;\n\nattribute vec3 position;\nattribute vec2 uv;\n\nvarying vec4 clippingSpace;\nvarying vec3 viewDir;\nvarying vec2 vUv;\n\nconst int numWaves = 5;\nconst float PI = 3.14159265;\nconst float sharp = 1.0;\n\nfloat getHeightFromWave(vec2 P, Wave W, float t)\n{\n    float inner = sin( dot(W.dir, P) * W.freq + W.phase*t);\n    return W.amp * inner;\n}\n\nWave createWave(float freq, float amp, float phase, vec2 dir){\n    Wave wave;\n    wave.freq = freq;\n    wave.amp = amp;\n    wave.phase = phase;\n    wave.dir = dir;\n    return wave;\n}\n\nvoid main(){\n  vec3 vPosition = position;\n  //calculate sin wave\n  Wave wave1 = createWave((2.0*PI)/_WaveLength, _Amp, (_Speed * 2.0* PI) / _WaveLength, _Dir.xy);\n  Wave wave2 = createWave(1.5 * (2.0*PI)/_WaveLength, _Amp*1.5, (_Speed *0.5 * 2.0 * PI) / _WaveLength, _Dir.yx);\n  Wave wave3 = createWave(0.5* (2.0*PI)/_WaveLength, _Amp*5.0, (_Speed *0.1 * 2.0 * PI) / _WaveLength, vec2(0.5, 0.5));\n  Wave wave4 = createWave(2.5* (2.0*PI)/_WaveLength, _Amp*0.5, (_Speed *1.5 * 2.0 * PI) / _WaveLength, vec2(-0.4, -0.6));\n  Wave wave5 = createWave ( 0.75* (2.0*PI)/_WaveLength, _Amp*0.2, (_Speed *5.0 * 2.0 * PI) / _WaveLength, vec2(-0.2, 0.8) );\n  //Wave waves[5] = Wave[5](wave1,wave2,wave3,wave4,wave5);\n  Wave waves[5];\n  waves[0] = wave1;\n  waves[1] = wave2;\n  waves[2] = wave3;\n  waves[3] = wave4;\n  waves[4] = wave5;\n   float h = 0.0;\n   for(int i = 0; i < numWaves; i++) {\n       Wave w = waves[i];\n       h += getHeightFromWave(vPosition.xy, w, time);\n    }\n    //update y position\n   vPosition.z = vPosition.z+h;\n  vUv = uv;\n  vec3 worldPosition=vec3(modelMatrix*vec4(vPosition,1.0));\n  viewDir = normalize(cameraPos - worldPosition);\n  clippingSpace = projectionMatrix * modelViewMatrix * vec4( vPosition, 1.0 );\n  gl_Position = clippingSpace;\n}\n");
 
 /***/ }),
 /* 7 */
